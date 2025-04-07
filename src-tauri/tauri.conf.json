@@ -31,11 +31,19 @@
       }
     }
   },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/Eriyc/music-player/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM5MTFENDdFMTlBNTlBM0IKUldRN21xVVpmdFFST1RMV1M1dDQ1dXhuZkd6QjRyQjEvRDhTZGNBbjZrY0FkY0ZxSEJXeHhhZm0K%"
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
     "resources": {},
-
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

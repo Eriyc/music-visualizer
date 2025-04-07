@@ -8,7 +8,8 @@ use std::{
 use base64::prelude::*;
 
 use log::info;
-use tauri::{Listener, Manager, State};
+use tauri::{AppHandle, Listener, Manager, State};
+use tauri_plugin_updater::UpdaterExt;
 
 mod lyrics;
 mod spotify;
@@ -16,6 +17,7 @@ mod spotify;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
@@ -25,6 +27,12 @@ pub fn run() {
             read_string
         ])
         .setup(|app| {
+            let handle = app.handle().clone();
+
+            tauri::async_runtime::spawn(async move {
+                update(handle.clone()).await.unwrap();
+            });
+
             let path = app.path().app_data_dir().unwrap();
             ensure_app_directories_exist(&path).expect("Failed to ensure app directories exist");
             info!("app_data path: {}", &path.display());
@@ -110,6 +118,7 @@ async fn upload_logo(
 
 #[tauri::command]
 async fn store_string(
+    handle: AppHandle,
     state: State<'_, AppConfigState>,
     key: String,
     value: String,
@@ -119,6 +128,7 @@ async fn store_string(
 
     write_config(&data_file_path, key, value)?;
 
+    handle.restart();
     Ok("String stored successfully".into())
 }
 
@@ -215,6 +225,30 @@ pub fn ensure_app_directories_exist(app_data_dir: &PathBuf) -> Result<(), String
         fs::File::create(&data_file_path)
             .map_err(|e| format!("Failed to create data.json: {}", e))?;
         println!("Created data.json: {:?}", data_file_path);
+    }
+
+    Ok(())
+}
+
+async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
+    if let Some(update) = app.updater()?.check().await? {
+        let mut downloaded = 0;
+
+        // alternatively we could also call update.download() and update.install() separately
+        update
+            .download_and_install(
+                |chunk_length, content_length| {
+                    downloaded += chunk_length;
+                    println!("downloaded {downloaded} from {content_length:?}");
+                },
+                || {
+                    println!("download finished");
+                },
+            )
+            .await?;
+
+        println!("update installed");
+        app.restart();
     }
 
     Ok(())
