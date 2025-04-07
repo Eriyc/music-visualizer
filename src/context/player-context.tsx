@@ -140,6 +140,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 					return { autoPlay: payload.auto_play };
 				case "filter_explicit_content_changed":
 					return { filterExplicitContent: payload.filter };
+				case "session_disconnected":
+					return initialState;
 
 				default:
 					console.warn("Unhandled player event type (Zustand):", payload);

@@ -2,41 +2,88 @@ import { usePlayerStore } from "@/context";
 import { useProgress } from "@/hooks/use-progress";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-
-type Line = {
-	startTimeMs: string;
-	endTimeMs: string;
-	words: string;
-	syllables: string[];
-};
+import { type Line, parseLrc } from "@/lib/lyric-utils";
+import { cn } from "@/lib/utils";
 
 type Lyrics = {
-	error: boolean;
-	message?: string;
+	type: "synced" | "plain";
 	lines: Line[];
-	syncType: "UNSYNCED" | "LINE_SYNCED";
+};
+
+type LyricsSucess = {
+	id: number;
+	trackName: string;
+	artistName: string;
+	albumName: string;
+	duration: number;
+	instrumental: boolean;
+	plainLyrics: string;
+	syncedLyrics: string;
+};
+
+type LyricsError = {
+	code: number;
+	message: string;
+	name: string;
 };
 
 export default function Lyrics() {
-	const trackUri = usePlayerStore((state) => state.currentItem?.track_id);
-
+	const track = usePlayerStore((state) => state.currentItem);
 	const [result, setResult] = useState<Lyrics | null>(null);
+	const [error, setError] = useState<LyricsError | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
+
 	const containerRef = useRef<HTMLDivElement>(null);
-	const [activeLineIndex, setActiveLineIndex] = useState(0);
+	const [activeLineIndex, setActiveLineIndex] = useState(-1);
 
 	const fetchLyrics = async () => {
-		const response = await invoke<Lyrics>("get_lyrics", {
-			trackId: trackUri,
-		}).catch(console.error);
+		if (!track) return;
+		setIsLoading(true);
+		setResult(null);
+		setError(null);
+		setActiveLineIndex(-1);
+		const response = await invoke<LyricsSucess>("get_lyrics", {
+			artist: track?.artists?.[0],
+			track: track?.name,
+			album: track.album,
+			duration: Math.round(track.duration_ms / 1000).toFixed(0),
+		}).catch((e) => {
+			const error = e as LyricsError;
+			setError(error);
+			return null;
+		});
 
-		setResult(response);
+		if (!response) {
+			setIsLoading(false);
+
+			return;
+		}
+		if (!response.syncedLyrics) {
+			setResult({
+				type: "plain",
+				lines: response.plainLyrics.split("\n").map((line) => ({
+					startTimeMs: 0,
+					words: line,
+				})),
+			});
+			return;
+		}
+		const lines = parseLrc(response.syncedLyrics);
+
+		setResult({
+			type: "synced",
+			lines,
+		});
+		setIsLoading(false);
 	};
 
 	useEffect(() => {
 		const container = containerRef.current;
 		if (!container) return;
 
-		const activeElement = container.querySelector(`[data-line="${0}"]`);
+		const activeElement = container.querySelector(
+			`[data-line="${activeLineIndex}"]`,
+		);
 		if (!activeElement) return;
 
 		// Calculate the scroll position to center the active line
@@ -51,20 +98,33 @@ export default function Lyrics() {
 			top: container.scrollTop + centerPosition + 24,
 			behavior: "smooth",
 		});
-	}, []);
+	}, [activeLineIndex]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
-		if (trackUri) {
+		if (track?.uri) {
 			fetchLyrics();
 		}
-	}, [trackUri]);
+	}, [track?.uri]);
 
 	const { displayPosition } = useProgress({ interval: 400 });
 	useEffect(() => {
-		if (!result || result.error || result.syncType !== "LINE_SYNCED") return;
+		if (!result || error) return;
 
 		let animationFrameId: number;
+
+		const scollPlainLyrics = () => {
+			const container = containerRef.current;
+			if (!container) return;
+
+			const top =
+				container.offsetHeight * (displayPosition / (track?.duration_ms ?? 1));
+
+			container.scrollTo({
+				top,
+				behavior: "smooth",
+			});
+		};
 
 		const updateActiveLine = () => {
 			const currentPosition = displayPosition;
@@ -72,12 +132,12 @@ export default function Lyrics() {
 			// Find the active line based on the current playback position
 			const newLineIndex = result.lines.findIndex((line, index) => {
 				if (index === result.lines.length - 1) {
-					return currentPosition >= Number.parseInt(line.startTimeMs);
+					return currentPosition >= line.startTimeMs;
 				}
 				const nextLine = result.lines[index + 1];
 				return (
-					currentPosition >= Number.parseInt(line.startTimeMs) &&
-					currentPosition < Number.parseInt(nextLine.startTimeMs)
+					currentPosition >= line.startTimeMs &&
+					currentPosition < nextLine.startTimeMs
 				);
 			});
 
@@ -88,24 +148,37 @@ export default function Lyrics() {
 			animationFrameId = requestAnimationFrame(updateActiveLine);
 		};
 
-		animationFrameId = requestAnimationFrame(updateActiveLine);
+		if (result.type === "synced") {
+			animationFrameId = requestAnimationFrame(updateActiveLine);
+		} else {
+			animationFrameId = requestAnimationFrame(scollPlainLyrics);
+		}
 
 		return () => {
 			cancelAnimationFrame(animationFrameId);
 		};
-	}, [displayPosition, result, activeLineIndex]);
-
+	}, [displayPosition, result, activeLineIndex, error, track?.duration_ms]);
 	return (
-		<div className="overflow-scroll max-h-[100vh] pt-4">
-			{result?.error && <div>Error: {result.message}</div>}
+		<div
+			className={cn(
+				"overflow-scroll max-h-[100vh] max-w-2/3 pt-4 no-scrollbar",
+				result?.type === "plain" && "bg-muted/50",
+			)}
+			ref={containerRef}
+		>
 			{result?.lines?.map((line, index) => (
 				<p
 					// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
 					key={index}
 					data-line={index}
-					className={`transition-all duration-300 py-2 text-4xl font-semibold rounded ${
-						index === 0 ? "bg-neutral-700 text-white" : "text-gray-500"
-					}`}
+					className={cn(
+						"transition-colors duration-300 py-1 px-2 text-4xl font-semibold rounded",
+						index === activeLineIndex
+							? "bg-neutral-700/50 text-white"
+							: "text-gray-500 text-3xl",
+						result.type === "plain" && "text-white",
+						line.words === "" && "py-4",
+					)}
 				>
 					{line.words}
 				</p>

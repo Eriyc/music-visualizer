@@ -1,15 +1,20 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { useEvent } from "@/hooks/use-events";
+import { useEffect } from "react";
 import { usePlayerStore } from "@/context";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/")({
 	component: Index,
 });
 
 function Index() {
-	const [events, setEvents] = useState<string[]>([]);
-	const logEndRef = useRef<HTMLPreElement>(null);
 	const playerState = usePlayerStore((state) => state.playbackState);
 	const navigate = useNavigate();
 
@@ -20,35 +25,49 @@ function Index() {
 		}
 	}, [playerState]);
 
-	useEvent<string>("info", (event) => {
-		console.log("event", event);
+	const handleUploadImage = async (
+		event: React.ChangeEvent<HTMLInputElement>,
+	) => {
+		console.log("Uploading image...");
+		const file = event.target.files?.[0];
+		if (!file) return;
 
-		setEvents((prev) => [
-			...prev,
-			`${new Date().toLocaleTimeString()}: [${event.id}] ${JSON.stringify(event.payload)}`,
-		]);
-	});
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-	useEffect(() => {
-		// 5. Scroll Logic
-		if (logEndRef.current) {
-			logEndRef.current.scrollTop = logEndRef.current.scrollHeight;
-		}
-	}, [events]);
+		const reader = new FileReader();
+		reader.onload = async (e) => {
+			const dataUrl = e.target?.result as string;
+			console.log("Image data URL:", dataUrl);
+		};
+		reader.readAsDataURL(file);
+	};
 
 	return (
-		<div className="p-2 flex-1 flex flex-col mb-10">
-			<h3>State: {playerState}</h3>
-			<pre
-				className="p-2 bg-stone-200 flex-1 rounded-sm overflow-scroll max-h-96"
-				ref={logEndRef}
-			>
-				{events.map((event, index) => (
-					// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-					<div key={index}>{event}</div>
-				))}
-			</pre>
+		<div className="p-2 flex-1 max-w-md w-full m-auto flex flex-col justify-center mb-10 bg-background gap-4">
+			<div>woop</div>
+
+			<Accordion type="multiple" className="w-full">
+				<AccordionItem value="settings" className="w-full">
+					<AccordionTrigger className="w-full">
+						<p className="w-full">Settings</p>
+					</AccordionTrigger>
+					<AccordionContent>
+						<div className="space-y-2">
+							<p>Select image to display?</p>
+							<Input
+								onChange={handleUploadImage}
+								type="file"
+								accept="image/svg"
+							/>
+						</div>
+						<div className="space-y-2 w-full">
+							<p>Speaker name</p>
+							<div className="flex gap-2 flex-1">
+								<Input placeholder="SPEAKER" />
+								<Button>Change</Button>
+							</div>
+						</div>
+					</AccordionContent>
+				</AccordionItem>
+			</Accordion>
 		</div>
 	);
 }

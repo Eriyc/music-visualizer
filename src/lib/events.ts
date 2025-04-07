@@ -139,6 +139,10 @@ export interface FilterExplicitContentChangedPayload extends BasePayload {
   filter: boolean;
 }
 
+export interface SessionDisconnectedPayload extends BasePayload {
+  type: "session_disconnected";
+}
+
 // ... other payload types
 
 export type SpotifyPlayerEventPayload =
@@ -160,6 +164,7 @@ export type SpotifyPlayerEventPayload =
   | PreloadingPayload
   | EndOfTrackPayload
   | SeekedPayload
+  | SessionDisconnectedPayload
   | UnavailablePayload;
 // ... add all other event types
 

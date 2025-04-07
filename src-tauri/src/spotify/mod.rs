@@ -1,10 +1,10 @@
 use futures_util::StreamExt;
 use tauri::{AppHandle, Emitter};
 
+mod captured_rodio_sink;
 mod config;
 mod core;
 mod event_handler;
-mod captured_rodio_sink;
 mod setup;
 
 pub async fn setup(

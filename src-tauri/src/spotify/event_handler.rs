@@ -65,6 +65,7 @@ enum SpotifyPlayerEventPayload {
     FilterExplicitContentChanged {
         filter: bool,
     },
+    SessionDisconnected,
     // Add other events as needed (PositionCorrection, Session*, etc.)
     // If you don't need specific data, you can make simpler variants:
     // PreloadNextTrack,
@@ -277,7 +278,10 @@ fn map_player_event_to_payload(event: PlayerEvent) -> Option<SpotifyPlayerEventP
         // PlayerEvent::TimeToPreloadNextTrack { .. } => { /* emit simple event? */ None }
         // PlayerEvent::PositionCorrection { .. } => { /* emit? */ None }
         // PlayerEvent::SessionConnected { .. } => { /* emit? */ None }
-        // PlayerEvent::SessionDisconnected { .. } => { /* emit? */ None }
+        PlayerEvent::SessionDisconnected { .. } => {
+            /* emit? */
+            Some(SpotifyPlayerEventPayload::SessionDisconnected)
+        }
         // PlayerEvent::SessionClientChanged { .. } => { /* emit? */ None }
 
         // Ignore events you don't need to send to Tauri
