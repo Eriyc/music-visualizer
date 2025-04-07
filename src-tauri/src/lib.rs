@@ -129,7 +129,6 @@ async fn store_string(
     write_config(&data_file_path, key, value)?;
 
     handle.restart();
-    Ok("String stored successfully".into())
 }
 
 #[tauri::command]
