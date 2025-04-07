@@ -62,7 +62,7 @@ impl SpotifyCore {
         let mixer_builder = mixer::find(None).unwrap(); // Get the builder
         let mixer_instance = mixer_builder(config.mixer.clone()); // Create Arc'd instance ONCE
 
-        let zeroconf_backend = librespot::discovery::find(Some("dns-sd")).unwrap();
+        let zeroconf_backend = librespot::discovery::find(None).unwrap();
         let discovery = match librespot::discovery::Discovery::builder(
             config.session.device_id.clone(),
             config.session.client_id.clone(),
