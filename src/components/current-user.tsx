@@ -1,5 +1,7 @@
 import { useEvent } from "@/hooks/use-events";
+import { emit, emitTo } from "@tauri-apps/api/event";
 import { useState } from "react";
+import { Avatar, AvatarImage } from "./ui/avatar";
 
 type Images = {
 	height: number;
@@ -25,8 +27,6 @@ export const CurrentUser = () => {
 	const [user, setUser] = useState<UserResponse | null>(null);
 
 	useEvent<string>("spotify_new_connection", async (event) => {
-		console.log("event", event);
-
 		const response = await fetch("https://api.spotify.com/v1/me", {
 			headers: {
 				Authorization: `Bearer ${event.payload}`,
@@ -38,25 +38,23 @@ export const CurrentUser = () => {
 		}
 
 		const data: UserResponse = await response.json();
-		console.log(data);
+		emitTo({ kind: "App" }, "info", {
+			message: `${data.display_name} connected`,
+		});
 
 		setUser(data);
 	});
 
 	if (!user) {
-		return <div>Loading...</div>;
+		return null;
 	}
 
 	return (
 		<div className="flex gap-2 flex-row items-center">
 			<div>
-				<img
-                    className="rounded-sm"
-					src={user.images[1].url}
-					alt={user.display_name}
-					width={32}
-					height={32}
-				/>
+				<Avatar className="rounded-sm">
+					<AvatarImage src={user.images[1].url} />
+				</Avatar>
 			</div>
 			<div>{user.display_name}</div>
 		</div>

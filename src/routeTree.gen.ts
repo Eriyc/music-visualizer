@@ -11,9 +11,30 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as VisualizerImport } from './routes/visualizer'
+import { Route as TestImport } from './routes/test'
+import { Route as PlayerImport } from './routes/player'
 import { Route as IndexImport } from './routes/index'
 
 // Create/Update Routes
+
+const VisualizerRoute = VisualizerImport.update({
+  id: '/visualizer',
+  path: '/visualizer',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const TestRoute = TestImport.update({
+  id: '/test',
+  path: '/test',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const PlayerRoute = PlayerImport.update({
+  id: '/player',
+  path: '/player',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const IndexRoute = IndexImport.update({
   id: '/',
@@ -32,6 +53,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/player': {
+      id: '/player'
+      path: '/player'
+      fullPath: '/player'
+      preLoaderRoute: typeof PlayerImport
+      parentRoute: typeof rootRoute
+    }
+    '/test': {
+      id: '/test'
+      path: '/test'
+      fullPath: '/test'
+      preLoaderRoute: typeof TestImport
+      parentRoute: typeof rootRoute
+    }
+    '/visualizer': {
+      id: '/visualizer'
+      path: '/visualizer'
+      fullPath: '/visualizer'
+      preLoaderRoute: typeof VisualizerImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -39,32 +81,47 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/player': typeof PlayerRoute
+  '/test': typeof TestRoute
+  '/visualizer': typeof VisualizerRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/player': typeof PlayerRoute
+  '/test': typeof TestRoute
+  '/visualizer': typeof VisualizerRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/player': typeof PlayerRoute
+  '/test': typeof TestRoute
+  '/visualizer': typeof VisualizerRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/player' | '/test' | '/visualizer'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/player' | '/test' | '/visualizer'
+  id: '__root__' | '/' | '/player' | '/test' | '/visualizer'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PlayerRoute: typeof PlayerRoute
+  TestRoute: typeof TestRoute
+  VisualizerRoute: typeof VisualizerRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PlayerRoute: PlayerRoute,
+  TestRoute: TestRoute,
+  VisualizerRoute: VisualizerRoute,
 }
 
 export const routeTree = rootRoute
@@ -77,11 +134,23 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/"
+        "/",
+        "/player",
+        "/test",
+        "/visualizer"
       ]
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/player": {
+      "filePath": "player.tsx"
+    },
+    "/test": {
+      "filePath": "test.tsx"
+    },
+    "/visualizer": {
+      "filePath": "visualizer.tsx"
     }
   }
 }
