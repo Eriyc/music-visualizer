@@ -177,7 +177,7 @@ export default function Lyrics() {
 							? "bg-neutral-700/50 text-white"
 							: "text-gray-500 text-3xl",
 						result.type === "plain" && "text-white",
-						line.words === "" && "py-4",
+						line.words === " " && "my-4",
 					)}
 				>
 					{line.words}

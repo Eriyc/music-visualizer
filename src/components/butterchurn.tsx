@@ -29,6 +29,7 @@ export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 		const animationFrameId = useRef<number | null>(null); // Ref for animation frame ID
 
 		const trackId = usePlayerStore((state) => state.currentTrackId);
+		const state = usePlayerStore((state) => state.playbackState);
 
 		// State to track if the visualizer is ready
 		const [isVisualizerReady, setIsVisualizerReady] = useState(false);
@@ -158,7 +159,7 @@ export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 			let isActive = true; // Flag to control the loop
 
 			const renderLoop = () => {
-				if (!isActive || !butterchurn.current) {
+				if (!isActive || !butterchurn.current || state === "stopped") {
 					console.log("Stopping render loop.");
 					return; // Exit loop if component unmounted or visualizer gone
 				}
@@ -191,7 +192,7 @@ export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 					animationFrameId.current = null;
 				}
 			};
-		}, [isVisualizerReady]); // Dependency: Run when visualizer becomes ready
+		}, [isVisualizerReady, state]); // Dependency: Run when visualizer becomes ready
 
 		const resizeCanvas = useCallback(() => {
 			if (!canvasRef.current) return;

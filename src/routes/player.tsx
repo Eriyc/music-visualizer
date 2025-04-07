@@ -2,17 +2,24 @@ import { ButterchurnVisualizer } from "@/components/butterchurn";
 import { CurrentTrackInfo } from "@/components/current-track-info";
 import Lyrics from "@/components/lyrics";
 import { ProgressBar } from "@/components/progress-bar";
-import { createFileRoute } from "@tanstack/react-router";
-import {
-	createContext,
-	KeyboardEvent,
-	type KeyboardEventHandler,
-	useEffect,
-	useRef,
-} from "react";
+import { createFileRoute, getRouteApi } from "@tanstack/react-router";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { appDataDir, join } from "@tauri-apps/api/path";
+import { createContext, useEffect, useRef } from "react";
 
 export const Route = createFileRoute("/player")({
 	component: PlayerComponent,
+	loader: async () => {
+		const logo = await invoke<string | undefined>("read_string", {
+			key: "logo",
+		});
+
+		const appDataDirPath = await appDataDir();
+		const filePath = await join(appDataDirPath, `logos/${logo}`);
+		const assetUrl = convertFileSrc(filePath);
+
+		return { logo: assetUrl };
+	},
 });
 
 // 1. Create a Context
@@ -25,6 +32,9 @@ const VisualizerContext = createContext<VisualizerContextType | null>(
 );
 
 function PlayerComponent() {
+	const routeApi = getRouteApi("/player");
+	const data = routeApi.useLoaderData();
+
 	const visualizerRef = useRef<VisualizerContextType>(null);
 
 	useEffect(() => {
@@ -60,6 +70,7 @@ function PlayerComponent() {
 							<ProgressBar />
 						</div>
 						<div className="flex-1" />
+						<img src={data.logo} className="h-32 w-auto aspect-square " alt="logo" />
 					</div>
 					<div className="flex-4/5">
 						<Lyrics />

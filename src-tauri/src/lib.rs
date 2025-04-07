@@ -1,11 +1,13 @@
 use std::{
+    collections::HashMap,
     fs,
-    io::{Read, Write},
+    io::{BufWriter, Read, Write},
     path::PathBuf,
 };
 
 use base64::prelude::*;
 
+use log::info;
 use tauri::{Listener, Manager, State};
 
 mod lyrics;
@@ -24,6 +26,8 @@ pub fn run() {
         ])
         .setup(|app| {
             let path = app.path().app_data_dir().unwrap();
+            ensure_app_directories_exist(&path).expect("Failed to ensure app directories exist");
+            info!("app_data path: {}", &path.display());
             app.manage(AppConfigState {
                 app_dir: path.clone(),
             });
@@ -37,13 +41,15 @@ pub fn run() {
                 )?;
                 speaker_name = Some("SPEAKER".to_string());
             }
+            let speaker_name = speaker_name.unwrap();
 
             let handler_clone = app.handle().clone();
             app.once("start_listen", move |_event| {
                 let handler_clone = handler_clone.to_owned();
                 let boxed_handle = Box::new(handler_clone);
+                info!("Starting Spotify setup as speaker: {}", speaker_name);
                 tauri::async_runtime::spawn(async move {
-                    spotify::setup(boxed_handle, speaker_name.unwrap().as_str())
+                    spotify::setup(boxed_handle, speaker_name.as_str())
                         .await
                         .unwrap();
                 });
@@ -92,7 +98,8 @@ async fn upload_logo(
     file.write_all(&decoded_data)
         .map_err(|e| tauri::Error::Io(e))?;
 
-    write_config(app_dir, "logo".to_string(), filename)?;
+    let data_file_path = app_dir.join("data.txt"); // Use a single file for simplicity
+    write_config(&data_file_path, "logo".to_string(), filename)?;
 
     Ok(UploadResult {
         success: true,
@@ -126,20 +133,37 @@ async fn read_string(
 }
 
 fn write_config(data_file_path: &PathBuf, key: String, value: String) -> Result<(), tauri::Error> {
-    let mut existing_data = String::new();
+    // Read existing data into a HashMap
+    let mut data: HashMap<String, String> = HashMap::new();
+
     if data_file_path.exists() {
         let mut file = fs::File::open(&data_file_path).map_err(|e| tauri::Error::Io(e))?;
-        file.read_to_string(&mut existing_data)
+        let mut content = String::new();
+        file.read_to_string(&mut content)
+            .map_err(|e| tauri::Error::Io(e))?;
+
+        for line in content.lines() {
+            if let Some((k, v)) = line.split_once("=") {
+                data.insert(k.to_string(), v.to_string());
+            }
+        }
+    }
+
+    // Update the value for the given key
+    data.insert(key, value);
+
+    // Write the updated data back to the file
+    let mut file = fs::File::create(&data_file_path).map_err(|e| tauri::Error::Io(e))?;
+    let mut writer = BufWriter::new(file);
+
+    for (k, v) in data.iter() {
+        let line = format!("{}={}\n", k, v);
+        writer
+            .write_all(line.as_bytes())
             .map_err(|e| tauri::Error::Io(e))?;
     }
 
-    // Construct the string to store: key=value\n
-    let new_entry = format!("{}={}\n", key, value);
-
-    // Append the new entry to the existing data
-    let mut file = fs::File::create(&data_file_path).map_err(|e| tauri::Error::Io(e))?; // Overwrite the file.  Append would be more complex.
-    file.write_all(new_entry.as_bytes())
-        .map_err(|e| tauri::Error::Io(e))?; // Write new_entry instead of existing_data
+    writer.flush().map_err(|e| tauri::Error::Io(e))?;
 
     Ok(())
 }
@@ -166,4 +190,32 @@ fn read_config(app_dir: &PathBuf, key: String) -> Result<Option<String>, tauri::
     }
 
     Ok(None) // Key not found
+}
+
+pub fn ensure_app_directories_exist(app_data_dir: &PathBuf) -> Result<(), String> {
+    let logos_dir = app_data_dir.join("logos");
+    let data_file_path = app_data_dir.join("data.txt");
+
+    // Ensure app directory exists
+    if !app_data_dir.exists() {
+        fs::create_dir_all(&app_data_dir)
+            .map_err(|e| format!("Failed to create app directory: {}", e))?;
+        println!("Created app directory: {:?}", app_data_dir);
+    }
+
+    // Ensure logos directory exists
+    if !logos_dir.exists() {
+        fs::create_dir_all(&logos_dir)
+            .map_err(|e| format!("Failed to create logos directory: {}", e))?;
+        println!("Created logos directory: {:?}", logos_dir);
+    }
+
+    // Ensure data.json file exists (create an empty one if it doesn't)
+    if !data_file_path.exists() {
+        fs::File::create(&data_file_path)
+            .map_err(|e| format!("Failed to create data.json: {}", e))?;
+        println!("Created data.json: {:?}", data_file_path);
+    }
+
+    Ok(())
 }
