@@ -6,7 +6,7 @@ An cross-platform desktop app that connects creates a Spotify Connect instance a
 
 - Spotify Connect, no authentication required (only a Premium account)
 - Lyrics for the currently playing track, provided by [lrclib.net](https://lrclib.net/)
-- Audio visualizer powered by [Butterchurn](https://butterchurn.dev/)
+- Audio visualizer powered by [Butterchurn](https://butterchurnviz.com/)
 - Customizable speaker name
 
 ## Installation
