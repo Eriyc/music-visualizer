@@ -1,5 +1,5 @@
 import { useEvent } from "@/hooks/use-events";
-import { emit, emitTo } from "@tauri-apps/api/event";
+import { emitTo } from "@tauri-apps/api/event";
 import { useState } from "react";
 import { Avatar, AvatarImage } from "./ui/avatar";
 

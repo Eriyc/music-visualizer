@@ -32,7 +32,7 @@ const initialState: PlayerState = {
 	currentTrackId: undefined,
 };
 
-export const usePlayerStore = create<PlayerStore>((set, get) => ({
+export const usePlayerStore = create<PlayerStore>((set) => ({
 	...initialState, // Spread the initial state
 
 	// Define the action to handle events
