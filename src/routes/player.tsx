@@ -5,7 +5,7 @@ import { ProgressBar } from "@/components/progress-bar";
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { appDataDir, join } from "@tauri-apps/api/path";
-import { createContext, useEffect, useRef } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 
 export const Route = createFileRoute("/player")({
 	component: PlayerComponent,
@@ -37,6 +37,8 @@ function PlayerComponent() {
 
 	const visualizerRef = useRef<VisualizerContextType>(null);
 
+	const [imageError, setImageError] = useState(false);
+
 	useEffect(() => {
 		document.addEventListener("keydown", handleKeyDown);
 		return () => {
@@ -58,6 +60,10 @@ function PlayerComponent() {
 		}
 	};
 
+	const handleImageError = () => {
+		setImageError(true);
+	};
+
 	return (
 		<VisualizerContext.Provider value={visualizerRef.current}>
 			<main className="flex flex-col flex-1 relative max-h-screen overflow-hidden">
@@ -70,7 +76,14 @@ function PlayerComponent() {
 							<ProgressBar />
 						</div>
 						<div className="flex-1" />
-						<img src={data.logo} className="h-32 w-auto aspect-square " alt="logo" />
+						{!imageError && (
+							<img
+								src={data.logo}
+								className="h-32 w-auto aspect-square "
+								alt="logo"
+								onError={handleImageError}
+							/>
+						)}
 					</div>
 					<div className="flex-4/5">
 						<Lyrics />
