@@ -2,6 +2,8 @@
 
 An cross-platform desktop app that connects creates a Spotify Connect instance and displays lyrics and an audio visualizer.
 
+![The app in question](/assets/visualizer.png)
+
 ## Features
 
 - Spotify Connect, no authentication required (only a Premium account)
