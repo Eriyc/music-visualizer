@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "music-visualizer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "dev.dgren.musicvisualizer",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -19,11 +19,12 @@
     ],
     "security": {
       "csp": {
-        "default-src": "'self' customprotocol: asset:",
+        "default-src": "'self' customprotocol: asset: 'unsafe-eval' 'unsafe-inline'",
         "connect-src": "ipc: http://ipc.localhost",
         "font-src": ["https://fonts.gstatic.com"],
-        "img-src": "'self' asset: http://asset.localhost blob: data:",
-        "style-src": "'unsafe-inline' 'self' https://fonts.googleapis.com"
+        "img-src": "'self' asset: http://asset.localhost https://i.scdn.co blob: data:",
+        "style-src": "'unsafe-inline' 'self' https://fonts.googleapis.com",
+        "script-src": "'wasm-unsafe-eval' 'unsafe-eval'"
       },
       "assetProtocol": {
         "enable": true,
@@ -34,7 +35,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/Eriyc/music-player/releases/latest/download/latest.json"
+        "https://github.com/Eriyc/music-visualizer/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM5MTFENDdFMTlBNTlBM0IKUldRN21xVVpmdFFST1RMV1M1dDQ1dXhuZkd6QjRyQjEvRDhTZGNBbjZrY0FkY0ZxSEJXeHhhZm0K"
     }

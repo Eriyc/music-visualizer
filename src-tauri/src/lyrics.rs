@@ -1,6 +1,7 @@
 use log::info;
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
+use urlencoding::encode;
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -30,17 +31,23 @@ pub async fn get_lyrics(
     album: String,
     duration: String,
 ) -> Result<LyricsSuccessResponse, LyricsErrorResponse> {
-    let url = format!(
-        "https://lrclib.net/api/get?artist_name={}&track_name={}&album_name={}&duration={}",
-        artist, track, album, duration
+    let artist_encoded = encode(artist.as_str());
+    let track_encoded = encode(track.as_str());
+    let album_encoded = encode(album.as_str());
+
+    let query = format!(
+        "artist_name={}&track_name={}&album_name={}&duration={}",
+        artist_encoded, track_encoded, album_encoded, duration
     );
+
+    let url = format!("https://lrclib.net/api/get?{}", query);
 
     let client = reqwest::Client::new();
     let request = client
         .request(Method::GET, url.replace(" ", "+").to_string())
         .header(
             "User-Agent",
-            "Music-visualizer 0.1.0 (https://github.com/Eriyc/music-visualizer)",
+            "Music-visualizer 0.1.1 (https://github.com/Eriyc/music-visualizer)",
         );
     let response = request.send().await.expect("Could not send request");
 

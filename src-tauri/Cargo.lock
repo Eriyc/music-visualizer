@@ -1089,6 +1089,7 @@ dependencies = [
  "regex",
  "reqwest 0.12.15",
  "rodio",
+ "rustls 0.23.25",
  "serde",
  "serde_json",
  "sha1",
