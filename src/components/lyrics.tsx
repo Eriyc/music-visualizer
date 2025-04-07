@@ -31,14 +31,12 @@ export default function Lyrics() {
 	const track = usePlayerStore((state) => state.currentItem);
 	const [result, setResult] = useState<Lyrics | null>(null);
 	const [error, setError] = useState<LyricsError | null>(null);
-	const [isLoading, setIsLoading] = useState(false);
 
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [activeLineIndex, setActiveLineIndex] = useState(-1);
 
 	const fetchLyrics = async () => {
 		if (!track) return;
-		setIsLoading(true);
 		setResult(null);
 		setError(null);
 		setActiveLineIndex(-1);
@@ -54,8 +52,6 @@ export default function Lyrics() {
 		});
 
 		if (!response) {
-			setIsLoading(false);
-
 			return;
 		}
 		if (!response.syncedLyrics) {
@@ -74,7 +70,6 @@ export default function Lyrics() {
 			type: "synced",
 			lines,
 		});
-		setIsLoading(false);
 	};
 
 	useEffect(() => {

@@ -36,7 +36,6 @@ export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 
 		// Get audio context and analyser from your hook
 		const {
-			analyserRef: analyzer,
 			audioContextRef: audioContext,
 			playbackGainNodeRef: playbackGain,
 			isReady: isMounted,
@@ -159,7 +158,7 @@ export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 			let isActive = true; // Flag to control the loop
 
 			const renderLoop = () => {
-				if (!isActive || !butterchurn.current || state === "stopped") {
+				if (!isActive || !butterchurn.current || state === "stopped") {
 					console.log("Stopping render loop.");
 					return; // Exit loop if component unmounted or visualizer gone
 				}
