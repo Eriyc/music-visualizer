@@ -7,7 +7,6 @@ type Result = {
 };
 
 const sanitizeFilename = (filename: string) => {
-  // Basic filename sanitization (example)
   return filename.replace(/[^a-zA-Z0-9._-]/g, "_");
 };
 

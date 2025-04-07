@@ -21,20 +21,17 @@ export interface ButterchurnVisualizerHandle {
 export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 	(_, ref) => {
 		const canvasRef = useRef<HTMLCanvasElement | null>(null);
-		// Store the actual preset objects if needed, or just keys/map
 		const presetsRef = useRef<Record<string, ButterchurnPreset> | null>(null);
 		const presetKeysRef = useRef<string[] | null>(null);
 		const presetIndex = useRef<number>(0);
 		const butterchurn = useRef<Visualizer | null>(null);
-		const animationFrameId = useRef<number | null>(null); // Ref for animation frame ID
+		const animationFrameId = useRef<number | null>(null);
 
 		const trackId = usePlayerStore((state) => state.currentTrackId);
 		const state = usePlayerStore((state) => state.playbackState);
 
-		// State to track if the visualizer is ready
 		const [isVisualizerReady, setIsVisualizerReady] = useState(false);
 
-		// Get audio context and analyser from your hook
 		const {
 			audioContextRef: audioContext,
 			playbackGainNodeRef: playbackGain,
@@ -45,7 +42,6 @@ export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 		});
 
 		const connectToAudioAnalyzer = useCallback(() => {
-			// Ensure both butterchurn and the analyser node are available
 			if (!butterchurn.current || !playbackGain.current) {
 				console.warn(
 					"Cannot connect audio: Butterchurn or AnalyserNode not ready.",
@@ -53,28 +49,26 @@ export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 				return;
 			}
 			try {
-				console.log("Connecting Butterchurn to AnalyserNode...");
+				// console.log("Connecting Butterchurn to AnalyserNode...");
 				butterchurn.current.connectAudio(playbackGain.current);
-				console.log("Butterchurn connected to audio.");
+				// console.log("Butterchurn connected to audio.");
 			} catch (error) {
 				console.error("Error connecting Butterchurn to audio:", error);
 			}
 		}, [playbackGain]);
 
 		const initButterchurn = useCallback(() => {
-			// Ensure canvas, audio context are ready, and component is mounted
 			if (
 				!canvasRef.current ||
 				!audioContext.current ||
 				!isMounted ||
-				butterchurn.current // Don't re-initialize if already done
+				butterchurn.current
 			) {
 				return;
 			}
 
 			try {
-				// Get presets
-				const presetMap = getPresets(); // Likely returns Record<string, ButterchurnPreset>
+				const presetMap = getPresets();
 				const extra = getExtraPresets();
 				const fullPresetMap = { ...presetMap, ...extra };
 
@@ -86,8 +80,8 @@ export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 					return;
 				}
 
-				presetsRef.current = fullPresetMap; // Store the map
-				presetKeysRef.current = keys; // Store the keys
+				presetsRef.current = fullPresetMap;
+				presetKeysRef.current = keys;
 				presetIndex.current = Math.floor(Math.random() * keys.length);
 
 				console.log(
@@ -96,13 +90,11 @@ export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 					}`,
 				);
 
-				// Get initial canvas dimensions
 				const initialWidth = canvasRef.current.offsetWidth || 800;
 				const initialHeight = canvasRef.current.offsetHeight || 600;
-				canvasRef.current.width = initialWidth; // Set canvas attributes explicitly
+				canvasRef.current.width = initialWidth;
 				canvasRef.current.height = initialHeight;
 
-				// Create the visualizer instance
 				butterchurn.current = Butterchurn.createVisualizer(
 					audioContext.current,
 					canvasRef.current,
@@ -110,79 +102,61 @@ export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 						width: initialWidth,
 						height: initialHeight,
 						pixelRatio: window.devicePixelRatio || 1,
-						textureRatio: 1, // Adjust if needed for performance
+						textureRatio: 1,
 					},
 				);
 
-				// Load the initial preset
 				const initialPresetKey = presetKeysRef.current[presetIndex.current];
 				const initialPreset = presetsRef.current[initialPresetKey];
 				if (initialPreset) {
 					butterchurn.current.loadPreset(initialPreset, 0); // 0 blend time for initial load
 				}
 
-				// *** Connect audio AFTER visualizer is created ***
 				connectToAudioAnalyzer();
 
-				// *** Signal that the visualizer is ready to start rendering ***
 				setIsVisualizerReady(true);
 			} catch (error) {
 				console.error("Failed to initialize Butterchurn:", error);
-				// Handle initialization error (e.g., show message to user)
-				setIsVisualizerReady(false); // Ensure it's marked as not ready
+				setIsVisualizerReady(false);
 			}
-		}, [audioContext, isMounted, connectToAudioAnalyzer]); // Dependencies
+		}, [audioContext, isMounted, connectToAudioAnalyzer]);
 
 		useEffect(() => {
-			// Initialize only when the component is mounted and audio context is ready
 			if (isMounted && audioContext.current) {
 				initButterchurn();
 			}
 
-			// Cleanup function (optional but good practice)
 			return () => {
-				// Stop animation loop (handled by the render effect cleanup)
-				// Disconnect audio (Butterchurn might do this internally, or you might need an explicit disconnect)
-				// butterchurn.current?.disconnectAudio?.(); // If such a method exists
-				butterchurn.current = null; // Clear the ref
-				setIsVisualizerReady(false); // Reset ready state
+				butterchurn.current = null;
+				setIsVisualizerReady(false);
 			};
-		}, [isMounted, audioContext, initButterchurn]); // Dependencies
+		}, [isMounted, audioContext, initButterchurn]);
 
 		useEffect(() => {
-			// Start rendering only when the visualizer is ready
 			if (!isVisualizerReady || !butterchurn.current) {
-				return; // Exit if not ready
+				return;
 			}
 
-			let isActive = true; // Flag to control the loop
+			let isActive = true;
 
 			const renderLoop = () => {
 				if (!isActive || !butterchurn.current || state === "stopped") {
 					console.log("Stopping render loop.");
-					return; // Exit loop if component unmounted or visualizer gone
+					return;
 				}
 
 				try {
-					// Optional: Get frequency data if needed elsewhere, but Butterchurn handles this internally
-					// if (analyser.current && dataArray.current) {
-					//   analyser.current.getByteFrequencyData(dataArray.current);
-					// }
-					butterchurn.current.render(); // Render the visualization
+					butterchurn.current.render();
 				} catch (error) {
 					console.error("Error during Butterchurn render:", error);
-					isActive = false; // Stop loop on error
-					// Optionally handle render error
+					isActive = false;
 				}
 
-				// Continue the loop
 				animationFrameId.current = requestAnimationFrame(renderLoop);
 			};
 
-			// Start the loop
 			renderLoop();
 
-			// Cleanup function for this effect
 			return () => {
 				console.log("Render loop cleanup: Cancelling animation frame.");
 				isActive = false; // Signal the loop to stop
@@ -191,7 +165,7 @@ export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 					animationFrameId.current = null;
 				}
 			};
-		}, [isVisualizerReady, state]); // Dependency: Run when visualizer becomes ready
+		}, [isVisualizerReady, state]);
 
 		const resizeCanvas = useCallback(() => {
 			if (!canvasRef.current) return;
@@ -200,23 +174,18 @@ export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 			const newWidth = canvas.offsetWidth;
 			const newHeight = canvas.offsetHeight;
 
-			// Check if size actually changed to avoid unnecessary updates
 			if (canvas.width !== newWidth || canvas.height !== newHeight) {
 				canvas.width = newWidth;
 				canvas.height = newHeight;
 
-				// Inform Butterchurn about the resize if it has a method for it
-				// Check Butterchurn documentation for the correct method name/signature
 				if (butterchurn.current) {
 					butterchurn.current.setRendererSize(newWidth, newHeight);
 				}
 			}
-		}, []); // No dependencies needed if it only reads refs/DOM
+		}, []);
 
 		useLayoutEffect(() => {
-			resizeCanvas(); // Initial resize
-
-			// Optional: Add resize observer for more robust resizing
+			resizeCanvas();
 			const resizeObserver = new ResizeObserver(() => {
 				resizeCanvas();
 			});
@@ -224,11 +193,9 @@ export const ButterchurnVisualizer = forwardRef<ButterchurnVisualizerHandle>(
 			if (canvasRef.current?.parentElement) {
 				resizeObserver.observe(canvasRef.current.parentElement);
 			} else if (canvasRef.current) {
-				// Fallback if parent isn't immediately available (less ideal)
 				resizeObserver.observe(canvasRef.current);
 			}
 
-			// Add window resize listener as a fallback or primary method
 			window.addEventListener("resize", resizeCanvas);
 
 			return () => {

@@ -10,48 +10,39 @@ export const useProgress = (
   const currentTrackId = usePlayerStore((state) => state.currentTrackId);
 
   const [displayPosition, setDisplayPosition] = useState(storePosition ?? 0);
-  const intervalRef = useRef<number | null>(null); // Ref to hold interval ID
+  const intervalRef = useRef<number | null>(null);
 
-  const isPlaying = ["playing", "preloading"].includes(state); // <-- ADJUST THIS CONDITION if needed
+  const isPlaying = ["playing", "preloading"].includes(state);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    // console.log("Store position changed, resetting display position:", storePosition);
     setDisplayPosition(storePosition ?? 0);
-  }, [storePosition, currentTrackId]); // Depend on storePosition and trackId
+  }, [storePosition, currentTrackId]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    // Clear any existing interval
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
 
-    // Only start the timer if playing and duration is valid
     if (isPlaying && duration && duration > 0) {
-      // console.log("Starting timer");
       intervalRef.current = setInterval(() => {
         setDisplayPosition((prevPosition) => {
-          // Increment position, but don't exceed duration
           const newPosition = Math.min(prevPosition + interval, duration);
-          // console.log("Timer tick:", newPosition);
           return newPosition;
         });
-      }, interval); // Update every 1000ms (1 second)
+      }, interval);
     } else {
-      // console.log("Timer stopped (not playing or no duration)");
     }
 
-    // Cleanup function: clear interval when component unmounts or dependencies change
     return () => {
       if (intervalRef.current) {
-        // console.log("Clearing timer interval");
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
     };
-  }, [isPlaying, duration, currentTrackId]); // Re-run effect if playing state, duration, or track changes
+  }, [isPlaying, duration, currentTrackId]);
 
   return { displayPosition, duration };
 };
