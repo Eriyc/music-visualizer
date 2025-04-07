@@ -26,7 +26,6 @@ tokio = { version = "1", features = ["rt", "macros", "time"] }
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 librespot = { version = "0.6.0-dev", git = "https://github.com/librespot-org/librespot.git", branch = "dev", features = [
-    "with-dns-sd",
 ] }
 data-encoding = "2.8.0"
 sha1 = "0.10.6"
