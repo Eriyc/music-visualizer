@@ -54,17 +54,14 @@ pub async fn get_lyrics(
     let text = response.text().await.expect("Could not get text");
     info!("Received response: {}", text);
 
-    // Attempt to deserialize as LyricsSuccessResponse first
     if let Ok(success) = serde_json::from_str::<LyricsSuccessResponse>(&text) {
         return Ok(success);
     }
 
-    // If that fails, attempt to deserialize as LyricsErrorResponse
     if let Ok(error) = serde_json::from_str::<LyricsErrorResponse>(&text) {
         return Err(error);
     }
 
-    // If both fail, return a default error or handle the failure as needed
     Err(LyricsErrorResponse {
         status_code: 500,
         message: "Failed to deserialize response".to_string(),

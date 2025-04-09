@@ -1,7 +1,31 @@
-# Tauri + React + Typescript
+# Music Visualizer
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+An cross-platform desktop app that connects creates a Spotify Connect instance and displays lyrics and an audio visualizer.
 
-## Recommended IDE Setup
+![The app in question](/assets/visualizer.png)
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+## Features
+
+- Spotify Connect, no authentication required (only a Premium account)
+- Lyrics for the currently playing track, provided by [lrclib.net](https://lrclib.net/)
+- Audio visualizer powered by [Butterchurn](https://butterchurnviz.com/)
+- Customizable speaker name
+
+## Installation
+
+Download the latest release from the [releases page](https://github.com/Eriyc/music-visualizer/releases/latest).
+
+Alternatively, build it for yourself by running the following commands:
+
+```bash
+git clone https://github.com/Eriyc/music-visualizer.git
+cd music-visualizer
+pnpm install
+pnpm tauri build
+```
+
+## Usage
+
+1. Open the app. Configure the speaker name and optionally an image to display.
+2. Connect to the instance in Spotify.
+3. Play music!

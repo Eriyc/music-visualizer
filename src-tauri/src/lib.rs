@@ -78,9 +78,8 @@ struct UploadResult {
 
 #[derive(Default)]
 struct AppConfigState {
-    app_dir: PathBuf, // Store the app's data directory
+    app_dir: PathBuf, 
 }
-// remember to call `.manage(MyState::default())`
 #[tauri::command]
 async fn upload_logo(
     state: State<'_, AppConfigState>,
@@ -93,10 +92,8 @@ async fn upload_logo(
     let logo_dir = app_dir.join("logos");
     fs::create_dir_all(&logo_dir).map_err(|e| tauri::Error::Io(e))?;
 
-    // Construct the full file path
     let file_path = logo_dir.join(&filename);
 
-    // Decode the Base64 data
     let decoded_data = BASE64_STANDARD
         .decode(&file_data)
         .map_err(|e| tauri::Error::Io(std::io::Error::new(std::io::ErrorKind::InvalidData, e)))?;
@@ -106,7 +103,7 @@ async fn upload_logo(
     file.write_all(&decoded_data)
         .map_err(|e| tauri::Error::Io(e))?;
 
-    let data_file_path = app_dir.join("data.txt"); // Use a single file for simplicity
+    let data_file_path = app_dir.join("data.txt");
     write_config(&data_file_path, "logo".to_string(), filename)?;
 
     Ok(UploadResult {
@@ -124,7 +121,7 @@ async fn store_string(
     value: String,
 ) -> Result<String, tauri::Error> {
     let app_dir = &state.app_dir;
-    let data_file_path = app_dir.join("data.txt"); // Use a single file for simplicity
+    let data_file_path = app_dir.join("data.txt");
 
     write_config(&data_file_path, key, value)?;
 
@@ -142,7 +139,6 @@ async fn read_string(
 }
 
 fn write_config(data_file_path: &PathBuf, key: String, value: String) -> Result<(), tauri::Error> {
-    // Read existing data into a HashMap
     let mut data: HashMap<String, String> = HashMap::new();
 
     if data_file_path.exists() {
@@ -158,11 +154,9 @@ fn write_config(data_file_path: &PathBuf, key: String, value: String) -> Result<
         }
     }
 
-    // Update the value for the given key
     data.insert(key, value);
 
-    // Write the updated data back to the file
-    let mut file = fs::File::create(&data_file_path).map_err(|e| tauri::Error::Io(e))?;
+    let file = fs::File::create(&data_file_path).map_err(|e| tauri::Error::Io(e))?;
     let mut writer = BufWriter::new(file);
 
     for (k, v) in data.iter() {
@@ -219,7 +213,6 @@ pub fn ensure_app_directories_exist(app_data_dir: &PathBuf) -> Result<(), String
         println!("Created logos directory: {:?}", logos_dir);
     }
 
-    // Ensure data.json file exists (create an empty one if it doesn't)
     if !data_file_path.exists() {
         fs::File::create(&data_file_path)
             .map_err(|e| format!("Failed to create data.json: {}", e))?;
@@ -233,7 +226,6 @@ async fn update(app: tauri::AppHandle) -> tauri_plugin_updater::Result<()> {
     if let Some(update) = app.updater()?.check().await? {
         let mut downloaded = 0;
 
-        // alternatively we could also call update.download() and update.install() separately
         update
             .download_and_install(
                 |chunk_length, content_length| {

@@ -3,21 +3,16 @@ import type {
 	PlayerState,
 	SpotifyPlayerEventPayload,
 	SerializableAudioItem,
-} from "@/lib/events"; // Adjust path if needed
+} from "@/lib/events";
 
 import type React from "react";
 import { useEffect } from "react";
 import { listen, type EventCallback } from "@tauri-apps/api/event";
 
-// Define the shape of the store, including state and actions
 interface PlayerStore extends PlayerState {
-	// Action to process incoming player events
 	handlePlayerEvent: (payload: SpotifyPlayerEventPayload) => void;
-	// You could add other actions here if needed for UI interactions later
-	// e.g., sendSeekCommand: (positionMs: number) => void;
 }
 
-// Re-use the initial state definition
 const initialState: PlayerState = {
 	playbackState: "unavailable",
 	positionMs: 0,
@@ -26,32 +21,26 @@ const initialState: PlayerState = {
 	repeat: "off",
 	autoPlay: false,
 	filterExplicitContent: false,
-	// Ensure all fields from PlayerState are here
 	playRequestId: undefined,
 	currentItem: undefined,
 	currentTrackId: undefined,
 };
 
 export const usePlayerStore = create<PlayerStore>((set) => ({
-	...initialState, // Spread the initial state
-
-	// Define the action to handle events
+	...initialState,
 	handlePlayerEvent: (payload) => {
-		console.log("Received event (Zustand):", payload.type, payload); // Debug log
+		// console.log("Received event (Zustand):", payload.type, payload);
 
-		// 'set' merges the returned object with the current state
 		set((state) => {
-			// --- Logic directly moved from playerReducer ---
 			switch (payload.type) {
 				case "play_request_id_changed":
-					// Return only the changed part
 					return { playRequestId: payload.play_request_id };
 				case "track_changed": {
 					const { type, ...item } = payload;
 					return {
 						currentItem: item as SerializableAudioItem,
 						currentTrackId: item.track_id,
-						positionMs: 0, // Reset position
+						positionMs: 0,
 					};
 				}
 				case "stopped":
@@ -96,13 +85,12 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
 					}
 					return {}; // No change
 				case "preloading":
-					console.log("Preloading:", payload.track_id);
+					// console.log("Preloading:", payload.track_id);
 					return {}; // No state change needed, just log
 				case "end_of_track":
 					if (state.currentItem?.track_id === payload.track_id) {
 						return {
 							playbackState: "ended",
-							// Use current state's duration if available
 							positionMs: state.currentItem?.duration_ms ?? state.positionMs,
 						};
 					}
@@ -149,30 +137,9 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
 			}
 		});
 	},
-
-	// Example of another action you might add later:
-	// sendSeekCommand: async (positionMs: number) => {
-	//   const currentTrackId = get().currentTrackId; // Use get() to access current state inside actions
-	//   if (currentTrackId) {
-	//     try {
-	//       // Replace with your actual Tauri command invocation
-	//       await invoke('seek_player', { trackId: currentTrackId, positionMs });
-	//       // Optionally update local state optimistically or wait for seeked event
-	//       set({ positionMs });
-	//     } catch (error) {
-	//       console.error("Failed to send seek command:", error);
-	//     }
-	//   }
-	// }
 }));
 
-// --- Component to Initialize Event Listener ---
-// This component should be rendered once near the root of your app.
-// It doesn't render anything itself but sets up the Tauri listener.
-
 export const PlayerEventInitializer: React.FC = () => {
-	// Get the action function from the store.
-	// Using the selector ensures we get the function reference correctly.
 	const handlePlayerEvent = usePlayerStore((state) => state.handlePlayerEvent);
 
 	useEffect(() => {
@@ -180,7 +147,6 @@ export const PlayerEventInitializer: React.FC = () => {
 			try {
 				const payload = event.payload;
 				if (payload && typeof payload.type === "string") {
-					// Call the Zustand action instead of dispatch
 					handlePlayerEvent(payload);
 				} else {
 					console.error("Received invalid event data:", event);
@@ -192,11 +158,9 @@ export const PlayerEventInitializer: React.FC = () => {
 
 		const unlistenPromise = listen("spotify_player_event", handleMessage);
 
-		// Cleanup listener on component unmount
 		return () => {
 			unlistenPromise.then((unlistenFn) => unlistenFn());
 		};
-	}, [handlePlayerEvent]); // Include handlePlayerEvent in dependency array
-
-	return null; // This component does not render anything
+	}, [handlePlayerEvent]);
+	return null;
 };

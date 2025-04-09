@@ -1,8 +1,6 @@
-// event_handler.rs (or wherever you prefer)
-
 use log::{error, warn};
 use serde::Serialize;
-use tauri::{AppHandle, Emitter}; // Make sure Manager is in scope for emit_all
+use tauri::{AppHandle, Emitter};
 use tokio::task::JoinHandle;
 
 use librespot::{
@@ -10,16 +8,14 @@ use librespot::{
     playback::player::{PlayerEvent, PlayerEventChannel, SinkStatus},
 };
 
-// --- Payload Structs (Recommended for type safety on the frontend) ---
-
 #[derive(Serialize, Clone)]
-#[serde(tag = "type", rename_all = "snake_case")] // Add type field for easy frontend switching
+#[serde(tag = "type", rename_all = "snake_case")]
 enum SpotifyPlayerEventPayload {
     PlayRequestIdChanged {
         play_request_id: u64,
     },
     TrackChanged {
-        #[serde(flatten)] // Flatten AudioItem fields directly into payload
+        #[serde(flatten)]
         item: SerializableAudioItem,
     },
     Stopped {
@@ -51,7 +47,7 @@ enum SpotifyPlayerEventPayload {
     },
     VolumeChanged {
         #[serde(with = "serde_volume")]
-        volume: u16, // Serialize volume 0-65535
+        volume: u16, // volume 0-65535
     },
     ShuffleChanged {
         shuffle: bool,
@@ -66,11 +62,6 @@ enum SpotifyPlayerEventPayload {
         filter: bool,
     },
     SessionDisconnected,
-    // Add other events as needed (PositionCorrection, Session*, etc.)
-    // If you don't need specific data, you can make simpler variants:
-    // PreloadNextTrack,
-    // SessionConnected,
-    // ...
 }
 
 #[derive(Serialize, Clone)]
@@ -87,7 +78,7 @@ struct SerializableAudioItem {
 }
 
 #[derive(Serialize, Clone)]
-#[serde(tag = "item_type", rename_all = "snake_case")] // Add item_type field
+#[serde(tag = "item_type", rename_all = "snake_case")]
 enum SerializableUniqueFields {
     Track {
         artists: Vec<String>,
@@ -104,7 +95,6 @@ enum SerializableUniqueFields {
     },
 }
 
-// Helper to serialize volume correctly
 mod serde_volume {
     use serde::{self, Serializer};
     pub fn serialize<S>(volume: &u16, serializer: S) -> Result<S::Ok, S::Error>
@@ -115,7 +105,6 @@ mod serde_volume {
     }
 }
 
-// --- Main Listener Function ---
 const TAURI_PLAYER_EVENT: &str = "spotify_player_event";
 
 pub fn spawn_player_event_listener(
@@ -131,11 +120,10 @@ pub fn spawn_player_event_listener(
                     break; // Channel closed
                 }
                 Some(event) => {
-                    log::trace!("Received PlayerEvent: {:?}", event); // Use trace for verbose events
+                    log::trace!("Received PlayerEvent: {:?}", event);
                     let potential_payload = map_player_event_to_payload(event);
 
                     if let Some(payload) = potential_payload {
-                        // Use emit_all if multiple windows might need the event
                         if let Err(e) = app_handle.emit(TAURI_PLAYER_EVENT, payload) {
                             error!("Failed to emit Tauri player event: {}", e);
                         }
@@ -146,8 +134,6 @@ pub fn spawn_player_event_listener(
         log::info!("Spotify PlayerEvent listener thread finished.");
     })
 }
-
-// --- Event Mapping Helper ---
 
 fn map_player_event_to_payload(event: PlayerEvent) -> Option<SpotifyPlayerEventPayload> {
     match event {
@@ -254,9 +240,8 @@ fn map_player_event_to_payload(event: PlayerEvent) -> Option<SpotifyPlayerEventP
             Some(SpotifyPlayerEventPayload::ShuffleChanged { shuffle })
         }
         PlayerEvent::RepeatChanged { context, track } => {
-            // Determine a single string representation for repeat state
             let repeat_state = match (context, track) {
-                (true, _) => "context".to_string(), // Prefer context repeat if enabled
+                (true, _) => "context".to_string(),
                 (false, true) => "track".to_string(),
                 (false, false) => "off".to_string(),
             };
@@ -274,22 +259,13 @@ fn map_player_event_to_payload(event: PlayerEvent) -> Option<SpotifyPlayerEventP
             Some(SpotifyPlayerEventPayload::PlayRequestIdChanged { play_request_id })
         }
 
-        // Add other events you care about here...
-        // PlayerEvent::TimeToPreloadNextTrack { .. } => { /* emit simple event? */ None }
-        // PlayerEvent::PositionCorrection { .. } => { /* emit? */ None }
-        // PlayerEvent::SessionConnected { .. } => { /* emit? */ None }
         PlayerEvent::SessionDisconnected { .. } => {
-            /* emit? */
             Some(SpotifyPlayerEventPayload::SessionDisconnected)
         }
-        // PlayerEvent::SessionClientChanged { .. } => { /* emit? */ None }
 
-        // Ignore events you don't need to send to Tauri
         _ => None,
     }
 }
-
-// --- Sink Event Handling ---
 
 const TAURI_SINK_EVENT: &str = "spotify_sink_event";
 

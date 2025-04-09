@@ -38,11 +38,11 @@ pub struct SpotifyCore {
     mixer: Arc<dyn mixer::Mixer>,
     pub cache: Cache,
 
-    pub config: SpotifyConfig, // See point 2
-    pub connecting: bool,      // e.g., Disconnected, Connecting, Connected
+    pub config: SpotifyConfig,
+    pub connecting: bool,
     pub last_credentials: Option<Credentials>,
     pub auto_connect_times: Vec<Instant>,
-    player_event_handle: Option<JoinHandle<()>>, // Store handle for cleanup
+    player_event_handle: Option<JoinHandle<()>>,
 }
 
 impl SpotifyCore {
@@ -51,9 +51,8 @@ impl SpotifyCore {
             .expect("could not create cache");
 
         if let Err(e) = init_capture_channel(handle.clone()) {
-            // Handle error - perhaps log and don't proceed with librespot init
             error!("Failed to initialize capture channel: {}", e);
-            panic!("Failed to initialize capture channel: {}", e); // Or handle more gracefully
+            panic!("Failed to initialize capture channel: {}", e);
         }
 
         let backend_builder: fn(Option<String>, AudioFormat) -> Box<dyn Sink> =
@@ -93,7 +92,7 @@ impl SpotifyCore {
         player.set_sink_event_callback(Some(sink_callback));
         let player_events = player.get_player_event_channel();
         let event_listener_handle =
-            event_handler::spawn_player_event_listener(player_events, handle.clone()); // Clone Box<AppHandle> again
+            event_handler::spawn_player_event_listener(player_events, handle.clone());
 
         Self {
             session,
@@ -107,11 +106,10 @@ impl SpotifyCore {
             connecting: false,
             last_credentials: None,
             auto_connect_times: vec![],
-            player_event_handle: Some(event_listener_handle), // Store the handle
+            player_event_handle: Some(event_listener_handle),
         }
     }
 
-    // Method to attempt connection
     pub async fn handle_discovery_event(&mut self, credentials: Credentials) {
         self.last_credentials = Some(credentials.clone());
         self.auto_connect_times.clear();
@@ -151,13 +149,9 @@ impl SpotifyCore {
         .await;
 
         let (spirc_, spirc_task_) = match spirc_result {
-            // Use the result
             Ok((spirc_, spirc_task_)) => (spirc_, spirc_task_),
             Err(e) => {
                 println!("[ERROR] could not initialize spirc: {}", e);
-                // Consider not exiting immediately during debugging, maybe just log and wait
-                // exit(1);
-                // Optionally try to reset state and wait for next discovery?
                 self.connecting = false;
                 self.last_credentials = None; // Clear credentials
                 return Err(());
@@ -180,7 +174,6 @@ impl SpotifyCore {
         Ok(token)
     }
 
-    // Method to handle spirc task completion
     pub async fn handle_spirc_completion(&mut self) {
         self.spirc_task = None;
 
@@ -207,11 +200,7 @@ impl SpotifyCore {
         if let Some(handle) = self.player_event_handle.take() {
             log::debug!("Aborting player event listener task...");
             handle.abort();
-            // Optionally await the handle, but aborting is usually sufficient
-            // let _ = handle.await;
         }
         log::info!("SpotifyCore shutdown complete.");
     }
-
-    // ... other methods corresponding to select! branches
 }
