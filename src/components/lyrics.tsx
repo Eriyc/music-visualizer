@@ -167,10 +167,10 @@ export default function Lyrics() {
 					key={index}
 					data-line={index}
 					className={cn(
-						"transition-colors duration-300 py-1 px-2 text-4xl font-semibold rounded",
+						"transition-colors duration-300 py-1 px-2 text-7xl font-semibold rounded",
 						index === activeLineIndex
 							? "bg-neutral-700/50 text-white"
-							: "text-gray-500 text-3xl",
+							: "text-gray-500 text-5xl",
 						result.type === "plain" && "text-white",
 						line.words === " " && "my-4",
 					)}
