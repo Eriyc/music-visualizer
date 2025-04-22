@@ -15,6 +15,13 @@ An cross-platform desktop app that connects creates a Spotify Connect instance a
 
 Download the latest release from the [releases page](https://github.com/Eriyc/music-visualizer/releases/latest).
 
+> [!IMPORTANT]
+> The app needs to have access to your AppData folder.
+
+```sh
+sudo dpkg -i "file_name.deb"
+```
+
 Alternatively, build it for yourself by running the following commands:
 
 ```bash
