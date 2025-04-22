@@ -1,4 +1,5 @@
 import { usePlayerStore } from "@/context";
+import type { PlayerState } from "@/lib/events";
 import { useEffect, useRef, useState } from "react";
 
 export const useProgress = (
@@ -12,7 +13,14 @@ export const useProgress = (
   const [displayPosition, setDisplayPosition] = useState(storePosition ?? 0);
   const intervalRef = useRef<number | null>(null);
 
-  const isPlaying = ["playing", "preloading"].includes(state);
+  const stoppedStates: PlayerState["playbackState"][] = [
+    "unavailable",
+    "stopped",
+    "ended",
+    "paused",
+  ];
+
+  const isPlaying = !stoppedStates.includes(state);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
