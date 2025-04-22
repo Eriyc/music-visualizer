@@ -96,13 +96,14 @@ function Index() {
 							<Input
 								onChange={handleUploadImage}
 								type="file"
-								accept="image/svg"
+								accept="image/*"
 							/>
 						</div>
 						<div className="space-y-2 w-full">
 							<p>Speaker name (needs restart to take effect)</p>
 							<div className="flex gap-2 flex-1">
 								<Input
+									value={newName}
 									placeholder="SPEAKER"
 									onChange={(e) => setNewName(e.target.value)}
 								/>
